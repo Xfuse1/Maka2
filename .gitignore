@@ -4,7 +4,7 @@
 /node_modules
 /.pnp
 .pnp.js
-
+/scripts
 # testing
 /coverage
 
@@ -30,4 +30,13 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 .env
+
+# migration exports and backups
+/migrations/export_*
+/migrations/*.sql
+!/migrations/README.md
+
+# migration reports
+/reports/*.md
+!/reports/.gitkeep
 
