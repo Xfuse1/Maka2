@@ -25,7 +25,6 @@ import {
 import Link from "next/link"
 import Image from "next/image"
 import { ProductViewTracker } from "./product-view-tracker"
-import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 import { SiteLogo } from "@/components/site-logo"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
@@ -110,7 +109,7 @@ export default function ProductDetailPage() {
           return
         }
 
-        console.log("[v0] ✅ Product fetched:", data)
+        console.log("[v0] ✅ Product fetched:")
         setProduct(data)
 
         if (data.category_id) {
@@ -547,7 +546,7 @@ export default function ProductDetailPage() {
                         </h4>
                         {recommendedProduct.category && (
                           <Badge variant="secondary" className="mb-2 text-xs">
-                            {recommendedProduct.category[0]?.name_ar || recommendedProduct.category.name_ar}
+                            {(recommendedProduct.category as any).name_ar}
                           </Badge>
                         )}
                         <p className="text-xl font-bold text-primary">{recommendedProduct.base_price} ج.م</p>

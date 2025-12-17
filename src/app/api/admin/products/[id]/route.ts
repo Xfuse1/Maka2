@@ -71,19 +71,74 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 }
 
-// DELETE - Delete product
+// DELETE - Delete product (cascade delete all related data)
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const supabase = getSupabaseAdminClient()
 
-    const { error } = await supabase.from("products").delete().eq("id", id)
+    // Step 1: Get all product variants
+    const { data: variants } = await supabase
+      .from("product_variants")
+      .select("id")
+      .eq("product_id", id)
 
-    if (error) throw error
+    // Step 2: Delete order_items that reference these variants
+    if (variants && variants.length > 0) {
+      const variantIds = variants.map((v: any) => v.id)
+      const { error: orderItemsError } = await supabase
+        .from("order_items")
+        .delete()
+        .in("variant_id", variantIds)
+
+      if (orderItemsError) {
+        console.error("[v0] Error deleting order items:", orderItemsError)
+        // Continue anyway - we want to delete the product
+      }
+    }
+
+    // Step 3: Delete product variants
+    const { error: variantsError } = await supabase
+      .from("product_variants")
+      .delete()
+      .eq("product_id", id)
+
+    if (variantsError) {
+      console.error("[v0] Error deleting variants:", variantsError)
+      // Continue anyway
+    }
+
+    // Step 4: Delete product images
+    const { error: imagesError } = await supabase
+      .from("product_images")
+      .delete()
+      .eq("product_id", id)
+
+    if (imagesError) {
+      console.error("[v0] Error deleting images:", imagesError)
+      // Continue anyway
+    }
+
+    // Step 5: Delete the product itself
+    const { error: productError } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", id)
+
+    if (productError) {
+      console.error("[v0] Error deleting product:", productError)
+      return NextResponse.json(
+        { error: "فشل حذف المنتج: " + productError.message },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error("[v0] Error deleting product:", error)
-    return NextResponse.json({ error: "Failed to delete product" }, { status: 500 })
+    return NextResponse.json(
+      { error: error?.message || "فشل حذف المنتج" },
+      { status: 500 }
+    )
   }
 }

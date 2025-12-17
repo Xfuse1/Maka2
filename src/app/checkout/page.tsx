@@ -16,7 +16,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { CheckoutTracker } from "./checkout-tracker"
-import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 import { SiteLogo } from "@/components/site-logo"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
@@ -210,17 +209,6 @@ export default function CheckoutPage() {
       setUiError(validationMsg)
       return
     }
-
-    // Optional: Track "Proceed to Payment" click (InitiateCheckout step)
-    const userMeta = buildUserMeta()
-    trackMetaEvent("InitiateCheckout", {
-      ...userMeta,
-      value: total,
-      currency: "EGP",
-      num_items: items.length,
-      step: "payment_click",
-      payment_method: formData.paymentMethod,
-    })
 
     setIsProcessing(true)
     try {

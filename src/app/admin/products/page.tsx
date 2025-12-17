@@ -780,11 +780,15 @@ export default function AdminProductsPage() {
       } catch (e) {
         console.error("[v0] Error reloading products after variant delete:", e)
       }
-    } catch (error) {
-      console.error("[v0] Error deleting variant:", error)
+    } catch (error: any) {
+      console.error("[v0] Error deleting variant:", {
+        message: error?.message,
+        stack: error?.stack,
+        error,
+      })
       toast({
         title: "خطأ",
-        description: "فشل حذف المتغير",
+        description: error?.message || "فشل حذف المتغير",
         variant: "destructive",
       })
     }

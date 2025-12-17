@@ -1,8 +1,5 @@
 "use client"
 
-import { useEffect } from "react"
-import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
-
 export function CheckoutTracker({
   items,
   total,
@@ -29,25 +26,6 @@ export function CheckoutTracker({
   currency?: string
   user?: { id?: string; name?: string | null; email?: string | null }
 }) {
-  useEffect(() => {
-    if (!items || items.length === 0) return
-
-    const userMeta = buildUserMeta(user)
-
-    trackMetaEvent("InitiateCheckout", {
-      ...userMeta,
-      value: total,
-      currency,
-      num_items: items.length,
-      contents: items.map((item) => ({
-        id: item.product?.id || item.id,
-        quantity: item.quantity ?? 1,
-        item_price: item.product?.price || item.price,
-        item_name: item.product?.name || item.name,
-        category: item.product?.category?.name_ar || item.category,
-      })),
-    })
-  }, [items, total, currency, user])
-
+  // Tracking removed
   return null
 }

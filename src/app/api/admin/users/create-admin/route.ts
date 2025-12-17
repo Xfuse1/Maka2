@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,16 +9,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
     }
 
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    )
+    // Check environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("Missing Supabase environment variables!")
+      console.error("NEXT_PUBLIC_SUPABASE_URL:", !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+      console.error("SUPABASE_SERVICE_ROLE_KEY:", !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+      return NextResponse.json({ 
+        error: "Server configuration error. Missing Supabase credentials." 
+      }, { status: 500 })
+    }
+
+    // Use the admin client from lib
+    const supabaseAdmin = createAdminClient()
 
     // إنشاء المستخدم
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
@@ -36,13 +38,15 @@ export async function POST(request: NextRequest) {
     if (data.user) {
       console.log("Creating profile for user")
       
+      const profilePayload = {
+        id: data.user.id,
+        name: fullName,
+        role: "admin",
+      } as any
+
       const { data: profileData, error: profileError } = await supabaseAdmin
         .from("profiles")
-        .upsert({
-          id: data.user.id,
-          name: fullName,
-          role: "admin",
-        })
+        .upsert(profilePayload)
         .select()
 
       if (profileError) {

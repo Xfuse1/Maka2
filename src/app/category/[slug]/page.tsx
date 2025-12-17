@@ -15,7 +15,6 @@ import { SiteFooter } from "@/components/site-footer"
 import { Input } from "@/components/ui/input"
 import { useParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 import { SignOutButton } from "@/components/sign-out-button"
 import type { User } from "@supabase/supabase-js"
 
@@ -177,20 +176,6 @@ export default function CategoryPage() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!searchQuery.trim()) return
-
-    const userMeta = buildUserMeta() // Guest
-    trackMetaEvent("Search", {
-      ...userMeta,
-      search_string: searchQuery,
-      search_source: "category_page",
-      results_count: filteredProducts.length,
-      contents: filteredProducts.slice(0, 5).map((product) => ({
-        id: product.id,
-        item_name: product.name_ar || product.name_en,
-        item_price: product.base_price,
-        category: categoryName,
-      })),
-    })
   }
 
   if (loading) {
@@ -273,17 +258,6 @@ export default function CategoryPage() {
                   key={product.id}
                   href={`/product/${product.id}`}
                   className="group"
-                  onClick={() => {
-                    trackMetaEvent("ViewContent", {
-                      content_ids: [product.id],
-                      content_name: product.name_ar || product.name_en,
-                      content_type: "product",
-                      content_category: categoryName,
-                      value: product.base_price,
-                      currency: "EGP",
-                      userName: "guest",
-                    })
-                  }}
                 >
                   <Card className="overflow-hidden border-2 border-border hover:border-primary transition-all hover:shadow-xl">
                     <CardContent className="p-0">

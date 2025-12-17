@@ -81,6 +81,14 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
+  // السماح بالوصول العام لإعدادات التصميم والشعار (للعرض فقط)
+  if (
+    pathname === "/api/admin/design/settings" ||
+    pathname === "/api/admin/design/logo"
+  ) {
+    return NextResponse.next()
+  }
+
   // حماية API الخاصة بالـ admin — تمنع الوصول للعامة وتعيد 401/403
   if (pathname.startsWith("/api/admin")) {
     try {

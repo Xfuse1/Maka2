@@ -8,7 +8,6 @@ import {  TrendingUp, Sparkles } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { CustomerReviews } from "@/components/customer-reviews"
-import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 import { useDesignStore } from "@/store/design-store"
 import { useSettingsStore } from "@/store/settings-store"
 
@@ -305,18 +304,6 @@ export function DynamicHomepageSection({ section, products, categories }: Dynami
               key={product.id}
               href={`/product/${product.id}`}
               className="group"
-              onClick={() => {
-                const userMeta = buildUserMeta()
-                trackMetaEvent("ViewContent", {
-                  ...userMeta,
-                  content_ids: [product.id],
-                  content_name: product.name_ar,
-                  content_type: "product",
-                  content_category: product.category?.[0]?.name_ar ?? null,
-                  value: product.base_price,
-                  currency: "EGP",
-                })
-              }}
             >
                 <Card 
                 className="overflow-hidden border-2 transition-all hover:shadow-xl"

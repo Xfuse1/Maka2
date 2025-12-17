@@ -7,7 +7,6 @@ import { Star  } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import type { Product } from "@/lib/types"
-import { trackMetaEvent, buildUserMeta } from "@/lib/analytics/meta-pixel"
 
 interface CrossSellingProductsProps {
   currentProduct: Product
@@ -37,17 +36,6 @@ export function CrossSellingProducts({ currentProduct, allProducts }: CrossSelli
             key={product.id}
             href={`/product/${product.id}`}
             className="group"
-            onClick={() => {
-              const userMeta = buildUserMeta()
-              trackMetaEvent("ViewContent", {
-                ...userMeta,
-                content_ids: [product.id],
-                content_name: product.name,
-                content_type: "product",
-                content_category: product.category,
-                value: product.price,
-                currency: "EGP",
-              })
             }}
           >
             <Card className="overflow-hidden border-2 border-border hover:border-primary transition-all hover:shadow-xl">

@@ -25,7 +25,7 @@ export async function getStoreSettingsServer(): Promise<StoreSettings | null> {
     .maybeSingle()
 
   // Debug log to help trace issues when the admin complains settings aren't showing
-  console.log("[DEBUG] store settings from DB >>>", data, " error=", error)
+  console.log("[DEBUG] store settings from DB >>>", " error=", error)
 
   if (error) {
     console.error("[Server] getStoreSettingsServer error", error)

@@ -290,12 +290,29 @@ export const updateProductVariant = updateProductVarint
 export async function deleteProductVariant(id: string) {
   const supabase = getSupabaseBrowserClient()
 
-  const { error } = await supabase.from("product_variants").delete().eq("id", id)
+  const { data, error } = await supabase.from("product_variants").delete().eq("id", id).select()
 
   if (error) {
-    console.error("[v0] Error deleting variant:", error)
-    throw error
+    console.error("[v0] Error deleting variant:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    })
+    
+    // Check if it's a foreign key constraint error
+    if (error.code === "23503" && error.message.includes("order_items")) {
+      throw new Error("لا يمكن حذف هذا المتغير لأنه مستخدم في طلبات موجودة. يمكنك تقليل الكمية المتاحة إلى 0 بدلاً من الحذف.")
+    }
+    
+    throw new Error(error.message || "فشل حذف المتغير")
   }
+
+  if (!data || data.length === 0) {
+    throw new Error("المتغير غير موجود أو تم حذفه مسبقاً")
+  }
+
+  return data
 }
 
 // Create product image
