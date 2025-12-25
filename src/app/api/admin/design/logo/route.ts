@@ -14,10 +14,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // SECURITY: Validate file type
+    const fileExt = file.name.split(".").pop()?.toLowerCase()
+    const allowedExtensions = ["jpg", "jpeg", "png", "webp", "avif", "gif", "svg"]
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/avif", "image/gif", "image/svg+xml"]
+
+    if (!fileExt || !allowedExtensions.includes(fileExt) || !allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: "نوع الملف غير مدعوم. الرجاء استخدام JPG, PNG, WebP, أو SVG فقط." },
+        { status: 400 }
+      )
+    }
+
+    // ⚠️ SECURITY WARNING for SVG logos:
+    // SVG files can contain JavaScript. For logos uploaded by admins only, this is
+    // lower risk but still a concern if admin credentials are compromised.
+    // Consider sanitizing SVGs or converting to PNG/WebP for better security.
+    const isSvg = file.type === "image/svg+xml" || fileExt === "svg"
+    if (isSvg) {
+      console.warn("[uploadLogo] SVG upload detected - ensure admin credentials are secure")
+      // TODO: Add SVG sanitization using DOMPurify or svg-sanitizer
+    }
+
     const supabase = getSupabaseAdminClient() as any
 
     // Generate unique file name
-    const fileExt = file.name.split(".").pop()
     const fileName = `${randomUUID()}.${fileExt}`
 
     // 1) Upload to Supabase Storage bucket "site-logo"

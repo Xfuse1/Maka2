@@ -3,6 +3,8 @@ import { paymentService } from "@/services/payment/payment-service"
 import type { KashierPaymentParams } from "@/services/payment/kashier-adapter"
 import { rateLimiter } from "@/services/payment/rate-limiter"
 import { auditLogger } from "@/services/payment/audit-logger"
+import { createClient } from "@/lib/supabase/server"
+import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 
 export const dynamic = "force-dynamic"
 
@@ -38,12 +40,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    
+
     if (isDev) console.log("[Payment API] Request body")
 
     const {
       orderId,
-      amount,
       currency = "EGP",
       paymentMethod,
       customerEmail,
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
       customerPhone,
     } = body
 
-    if (!orderId || !amount || !paymentMethod || !customerEmail || !customerName) {
+    if (!orderId || !paymentMethod || !customerEmail || !customerName) {
       return NextResponse.json(
         {
           success: false,
@@ -60,6 +61,61 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // SECURITY: Verify order exists and get actual amount from database
+    const supabaseAdmin = getSupabaseAdminClient() as any
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from("orders")
+      .select("id, order_number, total, user_id, customer_email, payment_status")
+      .eq("id", orderId)
+      .single()
+
+    if (orderError || !order) {
+      await auditLogger.logSecurityEvent({
+        eventType: "payment_invalid_order",
+        description: "Payment creation attempted for non-existent order",
+        actor: customerEmail || "unknown",
+        ipAddress,
+        details: { orderId },
+      })
+      return NextResponse.json(
+        { success: false, error: "Order not found" },
+        { status: 404 }
+      )
+    }
+
+    // SECURITY: Verify order ownership
+    // Get authenticated user if any
+    let currentUser = null
+    try {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      currentUser = user
+    } catch (e) {
+      // User not authenticated - will rely on email check
+    }
+
+    // Verify ownership: either user_id matches OR customer_email matches
+    const isOwner =
+      (currentUser && order.user_id === currentUser.id) ||
+      (order.customer_email && order.customer_email.toLowerCase() === customerEmail.toLowerCase())
+
+    if (!isOwner) {
+      await auditLogger.logSecurityEvent({
+        eventType: "payment_unauthorized_access",
+        description: "Payment creation attempted for order belonging to another user",
+        actor: customerEmail || "unknown",
+        ipAddress,
+        details: { orderId, orderUserId: order.user_id, orderEmail: order.customer_email },
+      })
+      return NextResponse.json(
+        { success: false, error: "Unauthorized: Order does not belong to you" },
+        { status: 403 }
+      )
+    }
+
+    // Use the actual order amount from database (not client-provided)
+    const amount = order.total
 
     if (paymentMethod === "cod") {
       return NextResponse.json({

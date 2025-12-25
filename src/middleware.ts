@@ -81,10 +81,11 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // السماح بالوصول العام لإعدادات التصميم والشعار (للعرض فقط)
+  // السماح بالوصول العام لإعدادات التصميم والشعار (للعرض فقط - GET requests only)
   if (
-    pathname === "/api/admin/design/settings" ||
-    pathname === "/api/admin/design/logo"
+    (pathname === "/api/admin/design/settings" ||
+      pathname === "/api/admin/design/logo") &&
+    request.method === "GET"
   ) {
     return NextResponse.next()
   }
